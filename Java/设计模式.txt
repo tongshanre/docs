@@ -1,0 +1,75 @@
+一 单例模式
+ 定义：单例模式，是一种常用的软件设计模式。在它的核心结构中只包含一个被称为单例的特殊类。通过单例模式可以保证系统中一个类只有一个实例。即一个类只有一个对象实例。
+ 特点：1.单例类只有一个实例
+      2.单例类必须自己创建自己的唯一实例
+      3.单例类必须给其他所有对象提供这一个实例
+ 单例模式的要点：
+      1.私有的构造方法
+      2.指向自己实例的私有静态引用
+      3.以自己实例为返回值的静态的公有方法
+ 单例模式根据实例化对象时机的不同分为两种：
+      一种是饿汉式单例，一种是懒汉式单例。
+      饿汉式实例在单例类被加载的时候，就实例化一个对象交给自己的引用；而懒汉式在调用取得实例方法的时候才会实例化对象。
+      代码如下：
+      饿汉式单例：
+            public class Singleton{
+              private static Singleton Singleton =  new Singleton();
+              private Singleton(){}
+              public static Singleton getInstance(){
+                return Singleton;
+              }
+            }
+      懒汉式单例：
+            public class Singleton{
+              private static Singleton Singleton;
+              private Singleton(){}
+              public static synchronized Singleton getInstance(){
+                if(singleton == null){
+                  singleton = new Singleton();
+                }
+                return singleton;
+              }
+            }
+      单例模式：双重锁方式
+            这个模式将同步内容下方到if内部，提高了执行的效率，不必每次获取对象时都进行同步，只有第一次才同步，出创建类以后就没有必要了。
+            public class Singleton{
+              private static volatile Singleton instance = null;
+              private Singleton(){}
+              public static Singleton getInstance(){
+                if(instance == null){
+                  synchronized(Singleton.class){
+                    if(instance == null){
+                      instance = new Singleton();
+                    }
+                  }
+                }
+              }
+              return instance;
+            }
+  单例模式的优点：
+      1.在内存中只有一个对象，节省内存空间。
+      2.避免频繁的创建销毁对象，可以提高性能。
+      3.避免对共享资源的多重占用。
+      4.可以全局访问。
+  单例模式的缺点：
+      1.扩展困难，由于getInstance静态函数没有办法生成子类的实例。如果要扩展，只有重写那个类。
+      2.隐式使用引起类结构不清晰。
+      3.导致程序内存泄漏的问题。
+  使用场景：
+      由于单例模式的以上优点，所以是编程中用的比较多的一种设计模式。以下为使用单例模式的场景：
+      1.需要频繁实例化然后销毁的对象。
+      2.创建对象时耗时过多或者耗资源过多，但又经常用到的对象。
+      3.资源共享的情况下，避免由于资源操作时导致的性能和损耗等。
+      4.控制资源的情况下，方便资源之间的互相通信。
+  单例模式注意事项：
+      只能使用单例类提供的方法得到单例对象，不要使用反射，否则将会实例化一个新对象。
+      不要做断开单例类对象与类中的静态引用的危险操作。
+      多线程使用单例使用共享资源时，注意线程安全问题。
+  关于JAVA中使用单例模式的一些常见问题：
+      1.单例模式的对象长时间不用会被JVM垃圾收集器收集吗
+        除非人为地断开单例中静态引用到单例对象的联接，否则JVM垃圾收集器是不会回收单例对象的。
+        JVM卸载类的判定条件如下：
+          1.该类的所有实例都已经被回收，也就是java堆中不存在该类的任何实例。
+          2.加载该类的ClassLoader已经被回收。
+          3.该类对应的java.lang.Class对象没有任何地方被引用，无法在任何地方通过反射访问该类的方法。
+          只有三个条件都满足，JVM才会在垃圾收集的时候卸载类。显然，单例的类不满足条件一，因此单例类也不会被回收。
