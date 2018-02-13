@@ -1,4 +1,4 @@
-一 单例模式
+ s一 单例模式
  定义：单例模式，是一种常用的软件设计模式。在它的核心结构中只包含一个被称为单例的特殊类。通过单例模式可以保证系统中一个类只有一个实例。即一个类只有一个对象实例。
  特点：1.单例类只有一个实例
       2.单例类必须自己创建自己的唯一实例
@@ -74,7 +74,7 @@
           3.该类对应的java.lang.Class对象没有任何地方被引用，无法在任何地方通过反射访问该类的方法。
           只有三个条件都满足，JVM才会在垃圾收集的时候卸载类。显然，单例的类不满足条件一，因此单例类也不会被回收。
 
-
+################################################################################
 
 二 工厂模式
   定义：工厂模式是Java中最常用的设计模式之一。这种类型的设计模式属于创建型模式，它提供了一种创建对象的最佳方式。
@@ -92,13 +92,13 @@
       }
   定义实际的产品类，总共定义两个，bike和bus分别表示不同的交通工具
       public class Bike implements Car{
-        @override
+        @Override
         public void gotowork(){
           System.out.println(“骑自行车去上班！”);
         }
       }
       public class Bus implements Car{
-        @override
+        @Override
         public void gotowork(){
           System.out.println(“坐公交车去上班！”);
         }
@@ -109,13 +109,13 @@
       }
   具体的工厂子类，分别为每个具体的产品类创建不同的工厂子类
       public class BikeFactory implements ICarFactory{
-        @override
+        @Override
         public Car getCar(){
           return new Bike();
         }
       }
       public class BusFactory implements ICarFactory{
-        @override
+        @Override
         public Car getCar(){
           return new Bus();
         }
@@ -151,3 +151,419 @@
     使用向下转型在客户端实例化子类的时候，严重依赖具体的子类的名字。当我们需要更改子类的构造方法的时候，比如增加一个参数，或者更改了子类的类名，所有的new出来的子类都需要跟着更改。但如果我们使用工厂模式，我们仅仅需要在工厂中修改一下new的代码，其余项目中用到此实例的都会跟着改，而不需要我们手动去操作。
   总结：
     无论是简单工厂模式、工厂模式还是抽象工厂模式，它们在本质上都是将不变的部分提取出来，将可变的部分留作接口，以达到最大程度上的复用。
+
+################################################################################
+
+三 原型模式
+  定义：通过复制现有的对象实例来创建新的对象实例。
+  实现：
+    1.实现Cloneable接口：
+      Cloneable接口的作用是在运行时通知虚拟机可以安全地在实现了此接口的类上使用clone方法。在java虚拟机中，只有实现了这个接口的类才可以被拷贝，否则在运行时会抛出CloneNotSupportedException异常。
+    2.重写Object类中的clone方法：
+      Java中，所有类的父类都是Object类，Object类中有一个clone方法，作用是返回对象的一个拷贝，但是其作用域protected类型的，一般的类无法调用，因此，原型类需要将clone方法的作用域修改为public类型。
+  示例：
+    例如，对于拿邮件发邀请函，邮件类大部分内容都是一样的：邀请原由、相邀地点，相聚时间等等，但对于被邀请者的名称和发送的邮件地址是不同的。
+    定义Mail类：
+      public class Mail implements Cloneable{
+        private String receiver;
+        private String subject;
+        private String content;
+        private String tail;
+
+        public Mail(EventTemplate et){
+          this.tail = et.geteventContent();
+          this.subject = et.geteventSubject();
+        }
+        @Override
+        public Main clone(){
+          Mail mail = null;
+          try{
+            mail = (Mail) super.clone();
+          }catch(CloneNotSupportedException e){
+            e.printStackTrace();
+          }
+          return mail;
+        }
+
+      }
+    测试方法：
+      public static void main(String []args){
+        int i = 0;
+        int MAX_COUNT = 10;
+        EventTemplate et = new EventTemplate("邀请函"，“婚嫁”);
+        Mail mail = new Mail(et);
+        while(i < MAX_COUNT){
+          Mail cloneMail = mail.clone();
+          cloneMail.setContext("xxx");
+          cloneMail.setReceiver("xx");
+          i++;
+        }
+      }
+  优点：
+    1.使用原型模型创建一个对象比直接new一个对象更有效率，因为它直接操作内存中的二进制流，特别是复制大对象时，性能的差别非常明显。
+    2.隐藏了制造新实例的复杂性，使得创建对象就像我们在编辑文档时复制粘贴一样简单。
+  缺点：
+    1.由于使用原型模式复制对象时不会调用类的构造方法，所以原型模式无法和单例组合使用，因为原型类需要将clone方法的作用域修改为public类型，那么单例模式的条件就无法满足了。
+    2.使用原型模式时不能有final对象。
+    3.Object类的clone方法只会拷贝对象中基本数据类型，对于数组，引用对象等只能另行拷贝。
+  深拷贝于浅拷贝：
+    浅拷贝：将一个对象复制后，基本数据类型的变量都会重新创建，而引用类型，指向的还是原对象所指向的（这样不安全）
+    深拷贝：将一个对象复制后，不论是基本数据类型还是引用类型，都是重新创建的。
+  适用场景：
+    1.复制对象的结构和数据。
+    2.希望对目标对象的修改不影响既有的原型对象。
+    3.创建一个对象的成本比较大。
+
+################################################################################
+
+四 生成器模式
+  定义：将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。生成器模式利用一个导演者对象和具体的建造者对象一个一个地建造出所有的零件，从而建造出完整的对象。
+  四个要素：
+    Builder:生成器接口，定义创建一个Produce对象所需要的各个部件的操作。
+    ConcreteBuilder:具体的生成器实现，实现各个部件的创建，并负责组装Produce对象的各个部件，同时还提供一个让用户获取组装完成后的产品对象的方法。
+    Director:指导者，也被称作导向者，主要用来使用Builder接口，以一个统一的过程来构建所需要的Produce对象。
+    Product:产品，表示被生成器构建的复杂对象，包含多个部件。
+  示例：
+    网上有用KFC的例子来描述生成器模式，比较通俗易懂。
+    假设KFC推出两种套餐：奥尔良鸡腿堡套餐和香辣鸡腿堡套餐。
+    奥尔良套餐包括：一个奥尔良鸡腿堡、一个炸鸡翅、一杯雪碧。
+    香辣鸡腿堡套餐包括：一个香辣鸡腿堡、一份薯条、一杯可乐。
+    每份套餐都是：主食、副食、饮料
+    KFC服务员要根据顾客的要求来提供套餐，那这个需求里面什么是固定的，什么是变化的呢？很明显顾客都是要的套餐，顾客的目的是一样的。套餐里面都是主食、副食、饮料，这也是固定的。至于主食是什么、副食是什么、饮料是什么，这个是变化的。
+    在实际的软件开发过程中，有时候面临着“一个复杂对象”的创建工作，其通常由各个部分的子对象采用一定的组合构成，由于需求的变化，这个复杂对象的各个部分或者其子对象经常要变化（例如，鸡腿堡套餐的顾客不喜欢可乐，要换奶茶），但是他们的结构确相对稳定（套餐都得是一份主食，副食及饮料）。当遇到这种场景时，使用生成器模式比价合理。
+    定义一个产品类：
+      public class Entity1{...}
+      public class Entity2{...}
+      public class Entity3{...}
+      public class Product{
+        Entity1 entity1;
+        Entity2 entity2;
+        Entity3 entity3;
+      }
+      产品类中的各个小模块是不一样的，由他们构造组成产品。
+    根据具体场景要求，定义n个生成器类：
+      public interface IBuild{
+        public void createEntity1();
+        public void createEntity2();
+        public void createEntity3();
+        public Product composite();
+        public Product create();
+      }
+      public class BuildProduct implements IBuild{
+        Product p = new Product();
+        public void createEntity1(){
+          ...
+        }
+        public void createEntity2(){
+          ...
+        }
+        public void createEntity3(){
+          ...
+        }
+        pubilc Product create(){
+          return composite();
+        }
+      }
+      public class BuildProduct1 implements IBuild{
+          Product p = new Product();
+          public void createEntity1(){
+            ...
+          }
+          ....
+      }
+    定义一个指挥者类，统一调度produce:
+      public class Director{
+        private IBuild build;
+        public Director(IBuild build){
+          this.build = build;
+        }
+        public Product build(){
+          return build .create();
+        }
+        public static void main(String []args){
+          IBuild build = new BuildProduct();
+          Director director = new Director(build);
+          Product p = director.build();
+        }
+      }
+  优点：
+    1.使用生成器模式可以使客户端不必知道产品内部组成的细节。
+    2.具体的构造者类之间是相互对立的，对系统的扩展非常有利。
+    3.由于具体的构造者是独立的，因此可以对建造过程逐步细化，而不对其他的模块产生任何影响。
+  缺点：
+    建造者模式的“加工工艺”是暴露的，这样使得建造者模式更加灵活，也使得工艺变得对客户不透明。
+  应用场景：
+    1.需要生成一个产品对象有复杂的内部结构。每一个内部成分本身可以是对象，也可以是一个对象的一个组成部分。
+    2.需要在生成的产品对象的属性相互依赖。建造模式可以强制实行一种分步骤进行的建造过程。
+    3.在对象创建过程中会使用到系统的其他一些对象，这些对象在产品对象的创建过程中不易得到。
+
+################################################################################
+
+五 适配器模式
+  定义：将一个类的接口转换成客户希望的另外一个接口。适配器模式使得原本由于接口不兼容而不能一起工作的那些类可以一起工作。
+  角色：
+    目标角色：这就是所期待得到的接口，也就是这类的接口是符合我们要求的。
+    原角色：  我们要使用的接口，但是这个接口不符合我们的要求，也就是现在需要适配的接口。
+    适配器角色：适配器类是适配器模式的核心。适配器把源接口砖汉成目标接口。显然，这一角色不可以是接口，而必须是具体类。
+  分类：
+    1.类适配器模式
+      class Adaptee{
+        public void specificRequest(){
+          System.out.println("特殊请求，这个是源角色");
+        }
+      }
+      interface Target{
+        public void request();
+      }
+      现在想要实现这个Target接口，但是不想重构，想要用上已有的Adaptee类，这时可以定义一个适配器类，继承想要使用的类，并且实现期待的接口。
+      class Adapter extends Adaptee implements Target{
+        public void request(){
+          super.specificRequest();
+        }
+      }
+      这样，使用适配器类和实现目标接口就完成了计划，测试：
+      public class Test{
+        public static void main(String[] args){
+          Target adapter = new Adapter();
+          adapter.request();
+        }
+      }
+    2.对象适配器模式
+      适配器类关联已有的Adaptee类，并且实现标准接口，这样做的好处是不再需要继承。
+      class Adapter implements Target{
+        private Adaptee adaptee;
+        public Adapter(Adaptee adaptee){
+          this.adaptee = adaptee;
+        }
+        public void request(){
+          this.adaptee.specificRequest();
+        }
+      }
+    区别：对象的适配器模式不是使用继承关系连接到Adaptee类，而是使用委派模关系连接到Adaptee类。
+  优点：
+    复用性：系统需要使用现有的类，而此类的接口不符合系统的需要。那么通过适配器模式就可以让这些功能得到更好的复用。
+    扩展性：在实现适配器功能的时候，可以自有调用自己开发的功能，从而自然地扩展系统的功能。
+  缺点：
+    过多的使用适配器，会让系统非常凌乱，不易整体进行把握。比如，明明看到调用的是A接口，其实内部被是配成了B接口的实现。所以适配器模式不适合在详细设计阶段使用它，它是一种补偿模式，专用来在系统后期扩展、修改时所用。
+  使用场景：
+    1.已经存在的类的接口不符合我们的需求。
+    2.创建一个可以复用的类，使得该类可以与其他不相关的类或不可预见的类协同工作。
+    3.使用一些已经存在的子类而不需要对其进行子类化来匹配接口。
+    4.旧的系统开发的类已经实现了一些功能，但是客户端却只能以另外接口的形式访问，但我们不希望手动更改原有类的时候。
+
+
+################################################################################
+
+六 装饰者模式
+  定义：在不必改变原类文件和原类使用的继承的情况下，动态地扩展一个对象的功能。它是通过创建一个包装对象，也就是用装饰来包裹真实的对象来实现。
+  角色：
+    抽象构件角色(Project)：给出一个接口，以规范准备接收附加责任的对象。
+    具体构件角色(Employe):定义一个将要接收附加责任的类。
+    装饰角色(Manager):持有一个构件对象的实例，并定义一个与抽象构件接口一致的接口。
+    具体装饰角色(ManagerA、ManagerB):负责给构件对象“贴上”附加的责任。
+  示例：
+    公共接口：
+      pubic interface Person{
+        void eat();
+      }
+    被装饰对象：
+      pubilc class OldPerson implements Person{
+        @Override
+        public void eat(){
+          SYstem.out.println("吃饭");
+        }
+      }
+    装饰对象：
+      public class NewPerson implements Person{
+        private OldPerson p;
+        NewPerson(OldPerson p){
+          this.p = p;
+        }
+        @Override
+        public void eat(){
+          System.out.println("生火");
+          System.out.println("做饭");
+          p.eat();
+          System.out.println("刷碗");
+        }
+      }
+    测试：
+      public class PersonDemo{
+        public static void main(String []args){
+          OldPerson old = new OldPerson();
+          NewPerson np = new NewPerson(old);
+          np.eat();
+        }
+      }
+      通过例子可以看到，没有改变原来的OldPerson类，同时也没有定义他的子类而实现了Person的扩展，这就是装饰者模式的作用。
+  优点：
+    1.使用呢装饰者模式比使用继承更加灵活，因为它选择通过一种动态的方法来扩展一个对象的功能，在运行时可以选择不同的装饰器，从而实现不同的行为
+    2.通过使用不同的具体装饰类以及这些装饰类的排列组合，可以创造出很多不同行为的组合。可以使用多个具体装饰类来装饰同一对象，得到功能更为强大的对象。
+    3.具体构件类与具体装饰类可以独立变化，他能是低耦合的。用户可以根据需要来增加新的具体构件类和具体装饰类，在使用时再对其进行各种组合，原有代码无须改变，符合“开闭原则”
+  缺点：
+    1.会产生很多的小对象，增加了系统的复杂性
+    2.这种比继承更加灵活机动的特性，也同时意味着装饰模式比继承更加易于出错，排错也很困难，对于多次装饰的对象，调试时寻找错误可能需要逐级排查，较为繁琐。
+  装饰者与适配器模式的区别：
+    1.适配器模式主要用来兼容不能在一起工作的类，使他们转化为可以兼容目标接口，虽然也可以实现和装饰者一样的增加职责，但目的不在此。装饰者模式主要是给被装饰者增加新职责的。
+    2.适配器模式是用新接口来调用原接口，原接口对新系统是不可见或者说不可用的。装饰者模式原封不动的使用原接口，系统对装饰的对象也通过原接口来完成使用。
+    3.适配器是知道被适配器的详细情况的（就是那个类或那个接口）。装饰者只知道接口是什么，至于其具体类型（是基类还是其他派生类）只有在运行期间才知道。
+  装饰者和继承的区别：
+  继承：
+    优点：代码结构清晰，而且实现简单
+    缺点：对于每一个需要增加的类都要创建具体的子类来帮组其增强，这样会导致继承体系过于庞大
+  装饰者：
+    优点：内部可以通过多态技术对多个需要增强的类进行增强。
+    缺点：需要内部通过多态技术维护需要增强的类的实例。进而使得代码稍微复杂。
+  使用场景：
+    1.需要扩展一个类的功能，或给一个类添加附加职责。
+    2.需要动态的给一个对象添加功能，这些功能可能不明确或者暂时的，可以随时很方便的动态撤销掉。
+    3.需要增加由一些基本功能的排列组合而产生的非常大量的功能，从而使继承关系变得不现实。
+    4.当不能采用生成子类的方法进行扩充时。一种情况是，可能有大量独立的扩展，为支持每一种组合将产生大量的子类，使得子类数目呈爆炸式增长。另一种情况可能是因为类被隐藏，或类定义不能用于生成子类。
+
+################################################################################
+
+七 代理模式
+  定义：为其他对象提供一种代理以控制对这个对象的访问。在某些情况下，一个对象不适合或者不能直接引用另一个对象，而代理对象可以在客户端和目标对象之间起到中介的作用
+  角色：
+    1.抽象角色：声明真实对象和代理对象的共同接口。
+    2.代理角色：代理对象角色内部含有对真实对象的引用，从而可以操作真实对象，同时代理对象提供与真实对象相同的接口以便在任何时刻都能代替真实对象。同时，代理对象可以在执行真是对象操作时，附加其他的操作，相当于对真实对象进行封装。
+    3.真实角色：代理角色所代表的真实对象，是我们最终要引用的对象。
+  分类：
+    静态代理：静态代理也就是在程序运行前就已经存在代理类的字节码文件，代理类和委托类的关系在运行前就确定了。
+      示例：
+        抽象角色，真实对象和代理对象共同的接口
+          public interface UserInfo{
+            public void queryUser();
+            public void updateUser();
+          }
+        真实角色：
+          public class UserImpl implements UserInfo{
+            @Override
+            public void queryUser(){
+              ....
+            }
+            @Override
+            public void updateUser(){
+              ...
+            }
+          }
+        代理角色：
+          public class UserProxy implements UserInfo{
+            private UserInfo userImpl;
+            public UserProxy(UserInfo userImpl){
+              this.userImpl = userImpl;
+            }
+            @Override
+            public void queryUser(){
+              ....
+            }
+            @Override
+            public void updateUser(){
+              ...
+            }
+          }
+        使用代理后如何调用他的方法？
+          public class Test{
+            public static void main(String []args){
+              UserInfo userImpl = new UserImpl();
+              UserInfo userProxy = new UserProxy(userImpl);
+              userProxy.queryUser();
+              userProxy.updateUser();
+            }
+          }
+    动态代理：动态代理类的源码是程序在运行期间由JVM根据反射等机制动态生成的，所以不存在代理类的字节码文件。代理角色和真实角色的联系在程序运行时确定。
+      示例：
+        抽象角色，真实对象和代理对象共同的接口
+          public interface UserInfo{
+            public void queryUser();
+            public void updateUser();
+          }
+        真实角色
+          public class UserImpl implements UserInfo{
+            @Override
+            public void queryUser(){
+              ...
+            }
+            @Override
+            public void updateUser(){
+              ...
+            }
+          }
+        代理角色处理器：
+          public class UserHandler implements InvocationHandler{
+            private UserInfo userImpl;
+            pubilc UserHandler(UserInfo userImpl2){
+              this.userImpl = userImpl2;
+            }
+            @Override
+            public Object invoke(Object proxy,Method method,Object[] args)throws Throwable{
+              Object object = null;
+              ...
+              object  = method.invoke(userImpl,args);
+              ...
+              return object;
+            }
+          }
+        如何调用（和静态代理略有不同）
+          public class Test{
+            public static void main(String []args){
+              UserInfo userImpl = new UserImpl();
+              UserHandler handler = new UserHandler(userImpl);
+              UserInfo userProxy =  (UserInfo)Proxy.newProxyInstance(CLassLoader.getSystemClassLoader(),new Class[]{UserInfo.class},handler);
+              userProxy.queryUser();
+            }
+          }
+  优点：业务类只需要关注业务逻辑本身，保证了业务类的重用性。这是代理的共有优点。能够协调调用者和被调用者，在一定程度上降低了系统的耦合度。
+  缺点：由于在客户端和真实主题之间增加了代理对象，因此有些类型的代理模式可能会造成请求的处理速度变慢，例如保护代理。实现代理模式需要额外的工作，而且有些代理模式的实现过程较为复杂，例如远程代理。
+
+################################################################################
+
+八 外观模式
+  定义：为子系统中的一组接口提供了一个一致的界面，Facade模式定义了一个高层接口，这个接口使得这个子系统更加容易使用。
+  角色：
+    1.外观（Facade）角色：客户端可以调用这个角色的方法。此角色知晓相关联子系统的功能和责任。在正常情况下，本角色将所有从客户端发来的请求委派到相应的子系统去。
+    2.子系统（SubSystem）角色：可以同时有一个或者多个子系统。每个子系统都不是一个单独的类，而是一个类的集合。每个子系统都可以被客户端直接调用，或者被外观角色调用。子系统并不知道外观角色的存在，对于子系统而言，外观角色仅仅是另外一个客户端而已。
+  示例：
+    1.子系统角色，由若干个类组成
+      public class SubClass1{
+        public void method1(){...}
+        public void method2(){...}
+      }
+      public class SubClass2{
+        public void method1(){...}
+        public void method2(){...}
+      }
+      public class SubClass3{
+        public void method1(){...}
+        public void method2(){...}
+      }
+    2.外观角色类
+      public class FacadeClass{
+        public void FacadeMethod(){
+          SubClass1 s1 = new SubClass1();
+          s1.method1();
+          SubClass2 s2 = new SubClass2();
+          s2.method1();
+          SubClass3 s3 = new SubClass3();
+          s3.method1();
+        }
+      }
+    3.客户端测试方法
+      public class ClientClass{
+        public static void main(String []args){
+          FacadeClass  fc = new FacadeClass();
+          fc.FacadeMethod();
+        }
+      }
+    Facade类其实相当于子系统中SubClass类的外观界面，有了这个Facade类，那么客户端就不需要亲自调用子系统中的那些具体实现的子类了，也不需要知道系统内部的实现细节，甚至都不需要知道这些子类的存在，客户端只需要跟Facade类交互就好了，从而更好地实现了客户端和子系统中具体类的解耦，让客户端更容易地使用系统
+    同时，这样定义一个Facade类可以有效地屏蔽内部的细节，免得客户端去调用Module类时，发现一些不需要它知道的方法。如上代码，我的所有子类中的方法二都是方法一调用的方法，是配合方法一的，他们不需要被客户端调用，而且具有一定的保密性，这样使用外观模式时就可以不被客户端知道。
+  优点：实现了子系统与客户端之间的松耦合关系。客户端屏蔽了子系统组件，减少了客户端所需处理的对象数目，并使得子系统使用起来更加容易。
+  适应场景：
+    设计初期阶段，应该有意识的将不同层分离，层与层之间建立外观模式。
+    开发阶段，子系统越来越复杂，增加外观模式提供一个简单的调用接口。
+    维护一个大型遗留系统的时候，可能这个系统已经非常难以维护和扩展，但又包含非常重要的功能，为其开发一个外观类，以便新系统与其交互。
+  外观模式总结：
+    1.外观模式为复杂子系统提供了一个简单接口，并不为子系统添加新的功能和行为。
+    2.外观模式实现了子系统与客户端之间的松耦合关系。
+    3.外观模式没有封装子系统的类，只是提供了简单的接口。如果应用需要，它并不限制客户使用子系统类。因此可以灵活的在系统易用性和通用性之间选择。
+    4.外观模式注重的是简化接口，它更多的时候是从架构的层次去看整个系统，而非单个类的层次。
