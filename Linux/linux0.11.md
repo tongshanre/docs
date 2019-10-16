@@ -3,10 +3,7 @@
    文件：sched.c
    set_system_gate(0x80,&system_call)
    _system_call:定义在System_call.s
-
    sys_call_table: Sys.h
-
-
   ```
 - 缓存初始化
   ```
