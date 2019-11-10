@@ -1,0 +1,319 @@
+1. fs\bitmap.c
+```c
+void free_block(int dev, int block)
+{
+  struct super_block * sb;
+  struct buffer_head * bh;
+
+  if (!(sb = get_super(dev)))
+    panic("trying to free block on nonexistent device");
+  if (block < sb->s_firstdatazone || block >= sb->s_nzones)
+    panic("trying to free block not in datazone");
+  bh = get_hash_table(dev,block);
+  if (bh) {
+    if (bh->b_count != 1) {
+      printk("trying to free block (%04x:%d), count=%d\n",
+        dev,block,bh->b_count);
+      return;
+    }
+    bh->b_dirt=0;
+    bh->b_uptodate=0;
+    brelse(bh);
+  }
+
+  int new_block(int dev)
+  {
+  	struct buffer_head * bh;
+  	struct super_block * sb;
+  	int i,j;
+
+  	if (!(sb = get_super(dev)))
+  		panic("trying to get new block from nonexistant device");
+  	j = 8192;
+  	for (i=0 ; i<8 ; i++)
+  		if (bh=sb->s_zmap[i])
+  			if ((j=find_first_zero(bh->b_data))<8192)
+  				break;
+  	if (i>=8 || !bh || j>=8192)
+  		return 0;
+  	if (set_bit(j,bh->b_data))
+  		panic("new_block: bit already set");
+  	bh->b_dirt = 1;
+  	j += i*8192 + sb->s_firstdatazone-1;
+  	if (j >= sb->s_nzones)
+  		return 0;
+  	if (!(bh=getblk(dev,j)))
+  		panic("new_block: cannot get block");
+  	if (bh->b_count != 1)
+  		panic("new block: count is != 1");
+  	clear_block(bh->b_data);
+  	bh->b_uptodate = 1;
+  	bh->b_dirt = 1;
+  	brelse(bh);
+  	return j;
+  }
+```
+
+2. fs/buffer.c
+```c
+  void inline invalidate_buffers(int dev)
+  {
+    int i;
+    struct buffer_head * bh;
+
+    bh = start_buffer;
+    for (i=0 ; i<NR_BUFFERS ; i++,bh++) {
+      if (bh->b_dev != dev)
+        continue;
+      wait_on_buffer(bh);
+      if (bh->b_dev == dev)
+        bh->b_uptodate = bh->b_dirt = 0;
+    }
+  }
+
+  struct buffer_head * getblk(int dev,int block)
+  {
+  	struct buffer_head * tmp, * bh;
+
+  repeat:
+  	if (bh = get_hash_table(dev,block))
+  		return bh;
+  	tmp = free_list;
+  	do {
+  		if (tmp->b_count)
+  			continue;
+  		if (!bh || BADNESS(tmp)<BADNESS(bh)) {
+  			bh = tmp;
+  			if (!BADNESS(tmp))
+  				break;
+  		}
+  /* and repeat until we find something good */
+  	} while ((tmp = tmp->b_next_free) != free_list);
+  	if (!bh) {
+  		sleep_on(&buffer_wait);
+  		goto repeat;
+  	}
+  	wait_on_buffer(bh);
+  	if (bh->b_count)
+  		goto repeat;
+  	while (bh->b_dirt) {
+  		sync_dev(bh->b_dev);
+  		wait_on_buffer(bh);
+  		if (bh->b_count)
+  			goto repeat;
+  	}
+  /* NOTE!! While we slept waiting for this block, somebody else might */
+  /* already have added "this" block to the cache. check it */
+  	if (find_buffer(dev,block))
+  		goto repeat;
+  /* OK, FINALLY we know that this buffer is the only one of it's kind, */
+  /* and that it's unused (b_count=0), unlocked (b_lock=0), and clean */
+  	bh->b_count=1;
+  	bh->b_dirt=0;
+  	bh->b_uptodate=0;
+  	remove_from_queues(bh);
+  	bh->b_dev=dev;
+  	bh->b_blocknr=block;
+  	insert_into_queues(bh);
+  	return bh;
+  }
+  /*
+   * bread() reads a specified block and returns the buffer that contains
+   * it. It returns NULL if the block was unreadable.
+   */
+  struct buffer_head * bread(int dev,int block)
+  {
+  	struct buffer_head * bh;
+
+  	if (!(bh=getblk(dev,block)))
+  		panic("bread: getblk returned NULL\n");
+  	if (bh->b_uptodate)
+  		return bh;
+  	ll_rw_block(READ,bh);
+  	wait_on_buffer(bh);
+  	if (bh->b_uptodate)
+  		return bh;
+  	brelse(bh);
+  	return NULL;
+  }
+
+  #define COPYBLK(from,to) \
+  __asm__("cld\n\t" \
+  	"rep\n\t" \
+  	"movsl\n\t" \
+  	::"c" (BLOCK_SIZE/4),"S" (from),"D" (to) \
+  	:"cx","di","si")
+
+  /*
+   * bread_page reads four buffers into memory at the desired address. It's
+   * a function of its own, as there is some speed to be got by reading them
+   * all at the same time, not waiting for one to be read, and then another
+   * etc.
+   */
+  void bread_page(unsigned long address,int dev,int b[4])
+  {
+  	struct buffer_head * bh[4];
+  	int i;
+
+  	for (i=0 ; i<4 ; i++)
+  		if (b[i]) {
+  			if (bh[i] = getblk(dev,b[i]))
+  				if (!bh[i]->b_uptodate)
+  					ll_rw_block(READ,bh[i]);
+  		} else
+  			bh[i] = NULL;
+  	for (i=0 ; i<4 ; i++,address += BLOCK_SIZE)
+  		if (bh[i]) {
+  			wait_on_buffer(bh[i]);
+  			if (bh[i]->b_uptodate)
+  				COPYBLK((unsigned long) bh[i]->b_data,address);
+  			brelse(bh[i]);
+  		}
+  }
+
+  /*
+   * Ok, breada can be used as bread, but additionally to mark other
+   * blocks for reading as well. End the argument list with a negative
+   * number.
+   */
+  struct buffer_head * breada(int dev,int first, ...)
+  {
+  	va_list args;
+  	struct buffer_head * bh, *tmp;
+
+  	va_start(args,first);
+  	if (!(bh=getblk(dev,first)))
+  		panic("bread: getblk returned NULL\n");
+  	if (!bh->b_uptodate)
+  		ll_rw_block(READ,bh);
+  	while ((first=va_arg(args,int))>=0) {
+  		tmp=getblk(dev,first);
+  		if (tmp) {
+  			if (!tmp->b_uptodate)
+  				ll_rw_block(READA,bh);
+  			tmp->b_count--;
+  		}
+  	}
+  	va_end(args);
+  	wait_on_buffer(bh);
+  	if (bh->b_uptodate)
+  		return bh;
+  	brelse(bh);
+  	return (NULL);
+  }
+
+  void buffer_init(long buffer_end)
+  {
+  	struct buffer_head * h = start_buffer;
+  	void * b;
+  	int i;
+
+  	if (buffer_end == 1<<20)
+  		b = (void *) (640*1024);
+  	else
+  		b = (void *) buffer_end;
+  	while ( (b -= BLOCK_SIZE) >= ((void *) (h+1)) ) {
+  		h->b_dev = 0;
+  		h->b_dirt = 0;
+  		h->b_count = 0;
+  		h->b_lock = 0;
+  		h->b_uptodate = 0;
+  		h->b_wait = NULL;
+  		h->b_next = NULL;
+  		h->b_prev = NULL;
+  		h->b_data = (char *) b;
+  		h->b_prev_free = h-1;
+  		h->b_next_free = h+1;
+  		h++;
+  		NR_BUFFERS++;
+  		if (b == (void *) 0x100000)
+  			b = (void *) 0xA0000;
+  	}
+  	h--;
+  	free_list = start_buffer;
+  	free_list->b_prev_free = h;
+  	h->b_next_free = free_list;
+  	for (i=0;i<NR_HASH;i++)
+  		hash_table[i]=NULL;
+  }
+```
+
+3. kernel/blk_drv/blk.h
+```c
+  extern inline void end_request(int uptodate)
+  {
+    DEVICE_OFF(CURRENT->dev);
+    if (CURRENT->bh) {
+      CURRENT->bh->b_uptodate = uptodate;
+      unlock_buffer(CURRENT->bh);
+    }
+    if (!uptodate) {
+      printk(DEVICE_NAME " I/O error\n\r");
+      printk("dev %04x, block %d\n\r",CURRENT->dev,
+        CURRENT->bh->b_blocknr);
+    }
+    wake_up(&CURRENT->waiting);
+    wake_up(&wait_for_request);
+    CURRENT->dev = -1;
+    CURRENT = CURRENT->next;
+  }
+```
+4. kernel/blk_drv/ll_rw_blk.c
+```c
+  static void make_request(int major,int rw, struct buffer_head * bh)
+  {
+    struct request * req;
+    int rw_ahead;
+
+  /* WRITEA/READA is special case - it is not really needed, so if the */
+  /* buffer is locked, we just forget about it, else it's a normal read */
+    if (rw_ahead = (rw == READA || rw == WRITEA)) {
+      if (bh->b_lock)
+        return;
+      if (rw == READA)
+        rw = READ;
+      else
+        rw = WRITE;
+    }
+    if (rw!=READ && rw!=WRITE)
+      panic("Bad block dev command, must be R/W/RA/WA");
+    lock_buffer(bh);
+    if ((rw == WRITE && !bh->b_dirt) || (rw == READ && bh->b_uptodate)) {
+      unlock_buffer(bh);
+      return;
+    }
+  repeat:
+  /* we don't allow the write-requests to fill up the queue completely:
+   * we want some room for reads: they take precedence. The last third
+   * of the requests are only for reads.
+   */
+    if (rw == READ)
+      req = request+NR_REQUEST;
+    else
+      req = request+((NR_REQUEST*2)/3);
+  /* find an empty request */
+    while (--req >= request)
+      if (req->dev<0)
+        break;
+  /* if none found, sleep on new requests: check for rw_ahead */
+    if (req < request) {
+      if (rw_ahead) {
+        unlock_buffer(bh);
+        return;
+      }
+      sleep_on(&wait_for_request);
+      goto repeat;
+    }
+  /* fill up the request-info, and add it to the queue */
+    req->dev = bh->b_dev;
+    req->cmd = rw;
+    req->errors=0;
+    req->sector = bh->b_blocknr<<1;
+    req->nr_sectors = 2;
+    req->buffer = bh->b_data;
+    req->waiting = NULL;
+    req->bh = bh;
+    req->next = NULL;
+    add_request(major+blk_dev,req);
+  }
+```
