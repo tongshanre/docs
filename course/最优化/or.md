@@ -9,7 +9,7 @@
 有定义知，凸集的特征是集合中任两点连成的线段必属于这个集合。
 
 ### 2. 凸函数
->$设S\subset R^n,非空，凸集，函数f:S\rightarrow R,如果对于\forall x^{(1)},x^{(2)}\in S,\forall \lambda\in [0,1],恒有f(\lambda x^{(1)}+(1-\lambda)x^{(2)})\leq \lambda f(x^{(1)})+(1-\lambda)f(x^{(2)}),则称f为S上的凸函数。$
+>$设S\subset R^n,非空，凸集，函数f:S\rightarrow R,如果对于\forall x^{(1)},x^{(2)}\in S,\forall \lambda\in [0,1],\\恒有f(\lambda x^{(1)}+(1-\lambda)x^{(2)})\leq \lambda f(x^{(1)})+(1-\lambda)f(x^{(2)}),则称f为S上的凸函数。$
 凸函数的几何意义是对于S上的任意两点，这两点连成的线段在函数图像上。
 
 ### 3. 凸规划
@@ -246,12 +246,77 @@ $其中, Q=\begin{pmatrix} 1 & 0 & 0 \\ 0 & 5 & 0 \\0 & 0 & 25 \end{pmatrix},c=\
 #### 4.3 拟牛顿法
 >牛顿法的优点是收敛速度快，缺点是计算复杂，每步迭代都需要计算目标函数的二阶偏导数(Hessian矩阵)和矩阵的逆。这显然会带来一些问题，例如计算量大、Hessian矩阵可能是非正定的，从而导致牛顿方向不是一个下降方向等。为了克服牛顿法的缺点，人们提出了`拟牛顿法`。其基本思想是用目标函数$f$以及一阶导数$\nabla f$构造Hessian矩阵的近似矩阵，由此获得一个搜索方向，生成新的迭代点。
 
+> 拟牛顿条件：
+>
+> 假设在第k次迭代后得到点$x_{k_1}$.将目标函数$f(x)$在点$x_{k+1}$处做Taylor多项式展开，取其二阶近似式，得
+>
+> $f(x)\approx f(x_{k+1})+\nabla f(x_{k+1})(x-x_{k+1})+\frac{1}{2}(x-x_{k+1})^T\nabla^2f(x_{k+1})(x-x_{k+1}) \quad(5-30)$
+>
+> 式(5-30)两边关于x求导可得：
+>
+> $\nabla f(x)\approx \nabla f(x_{k+1})+\nabla^2f(x_{k+1})(x-x_{k+1})$
+>
+> 令$x=x_k$,则 $\nabla f(x_k)\approx\nabla f(x_{k+1})+\nabla^2f(x_{k+1})(x-x_{k+1})$
+>
+> $记s_k=x_{k+1}-x_k,y_k=\nabla f(x_{k+1})-\nabla f(x_k),则Hession矩阵\nabla^2f(x_{k+1})满足:$
+>
+> $$\nabla^2f(x_{k+1})s_k\approx y_k\quad (5-31)$$
+>
+> $又设Hession矩阵\nabla^2f(x_{k+1})可逆，则:$
+>
+> $s_k\approx [\nabla^2f(x_{k+1})]^{-1}y_k\quad(5-32)$
+>
+> 对于二次函数，式(5-31)和式(5-32)精确成立。对于一般函数，我们希望Hession矩阵的近似矩阵满足以下条件:
+>
+> $B_{k+1}s_k\approx y_k\quad (5-33)或s_k\approx H_{k+1}y_k\quad (5-34)$
+>
+> $其中，B_{k+1}\approx \nabla^2f(x_{k+1}),H_{k+1}\approx \nabla^2f(x_k+1)^{-1}$
+>
+> 式(5-33)和式(5-34)被称为`拟牛顿条件`，或`拟牛顿方程`，或`割线方程`
+>
+> 
+>
+> `秩1校正`
+>
+> 假设$H_k$是第k次迭代中Hessioon矩阵的逆矩阵的近似，在构造满足拟牛顿条件式(3-34)的矩阵$H_{k+1}$时，令$H_{k+1}=H_k+\Delta H_k$其中$\Delta H_k$为`校正矩阵`。
+>
+> 秩1校正是令校正矩阵$\Delta H_k=\alpha u_ku_k^T$,其中$\alpha$是一个常数，$u_k$是n维列向量。这样定义的$\Delta H_k$是秩为1的对称矩阵。选择适当的$u_k$使拟牛顿条件(5-34)成立，即$H_{k+1}y_k=H_ky_k+\alpha u_ku_k^Ty_k=s_k$
+>
+> 假如令$\alpha u_k^Ty_k=1,即\alpha=1/u_k^Ty_k,那么u_k=s_k-H_ky_k$
+>
+> 带入校正公式，可得
+> $$
+> H_{k+1}=H_k+\frac{u_ku_k^T}{u_k^Ty_k}=H_k+\frac{(s_k-H_ky_k)(s_k-H_ky_k)^T}{(s_k-H_ky_k)^Ty_k}
+> $$
+> `秩2校正`
+>
+>  若校正矩阵是秩为2的对称矩阵。例如，令$\Delta H_k=\alpha u_ku_k^T+\beta v_kv_k^T$
+>
+> 其中$\alpha ,\beta$是常数，$u_k,y_k$是n维列向量，则称该校正公式为`秩2校正公式`。著名的DFP方法就属于秩2校正。
+> $$
+> H_{k+1}=H_k+\frac{s_ks_k^T}{s_k^Ty_k}-\frac{H_ky_ky_k^TH_k}{y_k^TH_ky_k}
+> $$
+
+> `算法 5.3（拟牛顿法）`
+>
+> `步骤1` $给定初始点x_0,初始矩阵B_0(或H_0)和容差上限\epsilon > 0,令k:=0。$
+>
+> `步骤2` $计算梯度g_k=\nabla f(x_k),检验是否满足收敛性准则：||\nabla f(x_k)||< \epsilon,\\若满足则停止迭代，得到x^*:=x_k;否则，进入步骤3$
+>
+> `步骤3` $解B_kd_k=-g_k得到拟牛顿方向d_k(或计算d_k=-H_kg_k)$
+>
+> `步骤4` $进行一维线性搜索，即求解单变量极值问题式，得到步长\alpha_k,并令x_{k+1}=x_k+\alpha_kd_k$
+>
+> `步骤5` $校正B_k产生B_{k+1}(或校正H_k产生H_{k+1}),使得拟牛顿条件式成立。$
+>
+> `步骤6 `令k:=k+1,转到步骤2
+
 ### 5. 约束极值的最优性条件
 #### 5.1 库恩-塔克条件
 >$min\quad f(x)\\s.t. \quad g_i(x)\geq0 , i=1,2,...,l$
 
 >`定理` <br/>
-$设x^*是约束优化问题的局部极小值点，f(x)和g_i(x)在点x^*处有一阶连续偏导数，并且x^*是约束条件的一个正则点，则存在向量\mu=(\mu_1,\mu_2,...,\mu_l^*)^T,使得下述条件成立:$<br/>
+$设x^*是约束优化问题的局部极小值点，f(x)和g_i(x)在点x^*处有一阶连续偏导数，\\并且x^*是约束条件的一个正则点，则存在向量\mu=(\mu_1,\mu_2,...,\mu_l^*)^T,使得下述条件成立:$<br/>
 $\begin{cases}\nabla f(x^*)-\sum_{i=1}^{l}\mu_i^*\nabla g_i(x^*)=0\\ \mu_i^*g_i(x^*)=0,\qquad i=1,2,...,l\\\mu_i^*\geq0,\qquad i=1,2,...,l \end{cases}$<br/>
 >这就是 `K-T条件`,满足K-T条件的点称为K-T点。
 
@@ -259,7 +324,7 @@ $\begin{cases}\nabla f(x^*)-\sum_{i=1}^{l}\mu_i^*\nabla g_i(x^*)=0\\ \mu_i^*g_i(
 >$s.t. \quad \begin{cases}g_i(x)\geq0,i=1,2,...,l\\h_j(x)=0,j=1,2,...,m\end{cases}$<br/>
 
 >`定理`<br/>
->$设x^*是约束优化问题的局部极小点，f(x),g_i(x)和h_j(x)在点x^*处有一阶连续偏导数,并且x^*是约束条件的一个正则点，则存在向量\mu=(\mu_1^*,\mu_2^*,...,\mu_l^*)^T和\lambda=(\lambda_1^*,\lambda_2^*,...,\lambda_m^*)^T使得下述条件成立：$<br/>
+>$设x^*是约束优化问题的局部极小点，f(x),g_i(x)和h_j(x)在点x^*处有一阶连续偏导数,\\并且x^*是约束条件的一个正则点，则存在向量\mu=(\mu_1^*,\mu_2^*,...,\mu_l^*)^T和\lambda=(\lambda_1^*,\lambda_2^*,...,\lambda_m^*)^T使得下述条件成立：$<br/>
 >$\begin{cases}\nabla f(x^*)-\sum_{i=1}^{l}\mu_i^*\nabla g_i(x^*)-\sum_{j=1}^{m}\lambda_j^*\nabla h_j(x^*)=0\\\mu_i^*g_i(x^*)=0,\qquad i=1,2,...,l\\\mu_i^*\geq0,\qquad i=1,2,...,l\end{cases}$<br/>
 
 >`K-T条件`是确定某点为最优点得必要条件，只要是最优点，且此处起作用约束得梯度线性无关，就会满足这个条件。但一般来说，它不是充分条件，即满足`K-T条件`的点不一定是最优点。特别地，对于凸规划问题，`K-T条件`既是最优点的必要条件，同时也是充分条件。
@@ -299,7 +364,7 @@ $\lim_{\rho\rightarrow\infin}\lambda(\rho)=\lim_{\rho\rightarrow\infin}\frac{-1}
 
 >考虑不等式约束优化问题: <br/>
 >$min\quad f(x) \\ s.t.\quad x\in S$<br/>
->$其中，S=\{x|g_i(x)\geq0,i=1,2,...,m\},并且至少存在某个x_0,使得g_i(x_0)>0,i=1,..,m。内点法的障碍函数时定义于S内部的一个连续函数\phi(x),它必须满足\phi(x)\geq0,并且\phi(x)\rightarrow\infin随着g_i(x)\rightarrow0_{+}(即x趋于S的边界时)。$<br/>
+>$其中，S=\{x|g_i(x)\geq0,i=1,2,...,m\},并且至少存在某个x_0,使得g_i(x_0)>0,i=1,..,m。\\内点法的障碍函数时定义于S内部的一个连续函数\phi(x),它必须满足\phi(x)\geq0,并且\phi(x)\rightarrow\infin随着g_i(x)\rightarrow0_{+}(即x趋于S的边界时)。$<br/>
 >通过障碍函数可将不等式优化问题转换为如下的无约束优化问题:$\min\beta(x,\mu)=f(x)+\mu\phi(x)$其中，$\mu$称为`障碍参数`。
 
 >常见的障碍函数:<br/>
