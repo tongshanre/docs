@@ -162,8 +162,7 @@ $x_2$，如此继续，得到一个解点序列$\{x_k\}$.若该点列有一极�
 >3) 函数逼近法，也称插值法(抛物线插值法、三次插值法)
 
 #### 3.1 黄金分割法
->`基本思想:`通过尽可能少地选取试验点获得尽可能大的区间缩短率.<br/>
->在搜索区间中“对称”取点，等比例地缩小区间。除第一次需要选取两个试验点外，之后每次都只需要计算一次函数值，可使包含极小点的区间缩小相同的比例。
+>`基本思想:`通过尽可能少地选取试验点获得尽可能大的区间缩短率.在搜索区间中“对称”取点，等比例地缩小区间。除第一次需要选取两个试验点外，之后每次都只需要计算一次函数值，可使包含极小点的区间缩小相同的比例。
 
 >假设区间缩短率为$\alpha$，在初始单峰区间$[a_0,b_0]$中，对称取两点分别为,<br/>$t_1=a_0+(1-\alpha)(b_0-a_0),t_1\prime=a_0+\alpha(b_0-a_0)$<br/>
 >若$f(t_1)<f(t_1\prime)$,则得到新区间$[a_1,b_1]，其中a_1=a_0,b_1=t_1\prime$，再在此区间对称取两点$t_2,t_2\prime,得到$<br/>
@@ -182,7 +181,39 @@ $x_3\prime=0.618+0.618(1-0.618)=0.854,f(x_3)=-5.249,f(x_3\prime)=-5.21$<br/>
 >SO ON
 
 #### 3.2斐波那契法
+>斐波那契数列：
 >
+>| F1   | F2   | F3   | F4   | F5   | F6   | F7   | F8   |
+>| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+>| 1    | 2    | 3    | 5    | 8    | 13   | 21   | 34   |
+>
+>$\rho_1 =1-\frac{F_N}{F_{N+1}},\\\rho_2 =1-\frac{F_{N-1}}{F_N},\\...,\\ \rho_N=1-\frac{F_1}{F_2}$
+>
+>总压缩比：$(1-\rho_1)(1-\rho_2)...(1-\rho_N)=\frac{F_N}{F_{N+1}}\frac{F_{N-1}}{F_N}...\frac{F_1}{F_2}=\frac{1}{F_{N+1}}$
+
+> 例：目标函数$f(x)=x^4-14x^3+60x^2-70x$在区间[0,2]上的极小值点，要求将极小点f所在区间的长度压缩到0.3之内。
+>
+> 计算迭代次数: $\frac{1+2\epsilon}{F_{N+1}}\leq \frac{最终区间长度}{初始区间长度}=\frac{0.3}{2}=0.15,F_{N+1}\geq \frac{1+2\epsilon}{0.15}$
+>
+> 第一次迭代：
+>
+> ​	确定压缩比：$1-\rho_1=\frac{F_4}{F_5}=5/8$
+>
+> ​	计算：$a_1=a_0+\rho_1(b_0-a_0)=3/4\\b_1=a_0+(1-\rho_1)(b_0-a_0)=5/4$
+>
+> ​				$f(a_1)=-24.34,f(b_1)=-18.65,f(a_1)<f(b_1),区间变为[a_0,b_1]=[0,5/4]$
+>
+> 第二次迭代：
+>
+> ​	确定压缩比：$1-\rho_2=\frac{F_3}{F_4}=3/5$
+>
+> ​	计算：$a_2=a_0+\rho_2(b_1-a_0)=1/2,\\b_2=a_1=3/4$
+>
+> ​	$f(a_2)=-21.69,f(b_2)=f(a_1)=-24.34,f(a_2)>f(b_2),区间压缩为[a_2,b_1]=[1/2,5/4]$
+>
+> ...
+>
+> 
 
 #### 3.3牛顿法
 >`基本思想:`在一个迭代点附近用切线近似代替曲线，以切线方程的零点作为新的迭代点，逐步逼近最优点.
@@ -238,7 +269,7 @@ $其中, Q=\begin{pmatrix} 1 & 0 & 0 \\ 0 & 5 & 0 \\0 & 0 & 25 \end{pmatrix},c=\
 >`解` 目标函数的梯度和Hessian矩阵分别为 $\nabla f(x)=\begin{pmatrix}4(x_1-1)^3\\2(x_2-2)\end{pmatrix},\nabla^2f(x)=\begin{pmatrix}12(x_1-1)^2 & 0 \\0 & 2\end{pmatrix}$<br/>
 >取初始点$x_0=(0,0)^T,于是$<br/>
 >第一次迭代: $\nabla f(x_0)=\begin{pmatrix}-4\\-4\end{pmatrix},\nabla^2f(x_0)=\begin{pmatrix}12&0\\0&2\end{pmatrix}$<br/>
->$x_1=x_0-[\nabla^2f(x_0)]^{-1}\nabla f(x_0)=\begin{pmatrix}0\\0\end{pmatrix}-\begin{pmatrix}12&0\\0&2\end{pmatrix}^{-1}\begin{pmatrix}-4\\-4\end{pmatrix}=\begin{pmatrix}1/3\\2\end{pmatrix}$<br/>
+>$`x_1=x_0-[\nabla^2f(x_0)]^{-1}\nabla f(x_0)=\begin{pmatrix}0\\0\end{pmatrix}-\begin{pmatrix}12&0\\0&2\end{pmatrix}^{-1}\begin{pmatrix}-4\\-4\end{pmatrix}=\begin{pmatrix}1/3\\2\end{pmatrix}`$<br/>
 >第二次迭代: $\nabla f(x_1)=\begin{pmatrix}-32/27\\0\end{pmatrix},\nabla^2f(x_1)=\begin{pmatrix}16/3&0\\0&2\end{pmatrix}$<br/>
 >$x_2=x_1-[\nabla^2f(x_1)]^{-1}\nabla f(x_1)=\begin{pmatrix}1/3\\2\end{pmatrix}-\begin{pmatrix}16/3&0\\0&2\end{pmatrix}^{-1}\begin{pmatrix}-32/27\\0\end{pmatrix}=\begin{pmatrix}5/9\\2\end{pmatrix}$<br/>
 >继续迭代下去.....
@@ -344,6 +375,8 @@ $\quad min \quad f(x)\\\quad s.t.\quad x\in S$<br/>
 >最常见的罚函数是:<br/>
 >$\phi(x)=\frac{1}{2}\sum_{i=1}^{m}g_i(x)^2=\frac{1}{2}g(x)^Tg(x)$<br/>
 >$\phi(x)=\frac{1}{\gamma}\sum_{i=1}^{m}|g_i(x)|^{\gamma}(\gamma\geq1)$
+>
+>$\phi(x)=(max\{0,-g(x)\})^2$
 
 >`例:` 请用外点罚函数法求解下面的约束优化问题:<br/>
 >$minf(x)=-x_1x_2\\ s.t.\quad g(x)=x_1+2x_2-4=0$<br/>
@@ -379,3 +412,86 @@ $min\beta(x,\mu)=x_1-2x_2-\mu ln(1+x_1-x_2^2)-\mu ln(x_2),对给定的\mu,由无
 >$x_1(\mu)=\frac{\sqrt{1+2\mu}+3\mu-1}{2},x_2(\mu)=\frac{1+\sqrt{1+2\mu}}{2}$<br/>
 >令障碍参数$\mu\rightarrow0取极限，得：\lim_{\mu\rightarrow0}x_1(\mu)=0,\lim_{\mu\rightarrow0}x_2(\mu)=1$<br/>
 >因此，该问题的最优化解为$x^*=(0,1)^T$
+
+##  四.Matlab优化工具箱
+
+### 1.  线性规划问题
+
+​	linprog
+$$
+min_x \, c^Tx \quad s.t. \quad Ax\leq b,A_{eq}x=b_{eq}\\ 
+x=linprog(c,A,b,Aeq,beq,lb,ub,x0,options)\\
+$$
+
+> optimoptions('linprog','Algorithm','simplex')
+> optimoptions('linprog','Algorithm','active-set')
+>
+> optimoptions('linporg','Display','iter')
+>
+> optimoptions('linprog','MaxIter',100)
+
+![](linprog.png)
+
+### 2. 二次规划问题
+
+​	quadprog
+$$
+min_x \quad \frac{1}{2}x^THx+c^Tx \quad s.t. Ax\leq b,A_{eq}\leq b_{eq}\\
+
+x=quadprog(H,c,A,b,Aeq,beq,lb,ub,x0,options)
+$$
+
+> optimoptions('quadprog','Algorithm','active-set')
+>
+> optimoptions('quadprog','Algorithm','interior-point-convex')
+>
+> optimoptions('quadprog','MaxIter',100)
+
+![](quadprog.png)
+
+### 3. 无约束最小化问题
+
+​	fminunc、fminsearch
+
+> $min_x \, f(x)$
+>
+> `Nelder-Mead method:` 
+>
+> ​		x=fminsearch(@fun,x0,options)
+>
+> `Direction determination and line search:`
+>
+> ​		x=fminunc(@fun,x0,options)
+
+​	![](fminunc_1.png)
+
+![](fminunc_2.png)
+
+> 
+>
+> ​	options=optimoptions('fminunc',...,...)
+>
+> ​			HessUpdate、bfgs、dfp、steepdesc
+>
+> 
+
+### 4. 有约束最小化问题
+
+​	fmincon
+
+> ​	$min_x\quad f(x),\quad s.t.\quad h(x)=0 \, and \, g(x)\leq 0$
+>
+> x=fmincon(@fun,x0,A,b,Aeq,beq,lb,ub,@nonlcon,options)
+
+![](fminc.png)
+
+
+
+### 5. 常用操作
+
+转置 :     []'
+
+求逆： inv(a)
+
+求矩阵尺寸：size(a),size(a,1)
+
