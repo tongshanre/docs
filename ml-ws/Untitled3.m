@@ -1,0 +1,22 @@
+%»­¶þÎ¬Í¼Ïñ%
+x=0:0.1:10;  
+x1=0:0.2:10;
+%[x y]=meshgrid(x1,y1);
+y=(x-1).*(3-x).*(x-4);
+%y2=(x-1).*(3-x).*(x-4)+normrnd(1,1);
+y2=(x1-1).*(3-x1).*(x1-4);
+y3=y2+wgn(1,size(y2,2),2);
+y5=y2+wgn(1,size(y2,2),20);
+y4=abs(y3-y2);
+y6=abs(y5-y2)
+%plot(x,y);
+hold
+avg=sqrt((y3-y2)*(y3-y2)'/size(x,2));
+fc=(y4-avg)*(y4-avg)'/size(x,2);
+plot(x,avg+x*0);
+%scatter(x1,y2,23,'r','filled');
+%scatter(x1,y3,22,'g','filled');
+scatter(x1,y4,'d','filled');
+scatter(x1,y6,'g','filled');
+title(fc);
+grid;
